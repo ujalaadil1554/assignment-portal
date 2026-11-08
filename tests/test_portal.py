@@ -22,7 +22,7 @@ def test_valid_submission(client):
         "url": "https://github.com/ujalaadil1554/my-portfolio"
     })
 
-    assert response.status_code == 200
+    assert response.status_code == 201
     assert response.json["success"] is True
 
     list_response = client.get("/submissions")
