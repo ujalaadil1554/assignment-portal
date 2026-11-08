@@ -1,0 +1,185 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignment Submission Portal</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f4f8;
+            margin: 0;
+            padding: 30px 15px;
+        }
+
+        .container {
+            max-width: 750px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px #00000015;
+        }
+
+        h1, h2 { color: #234b78; }
+
+        h1 { text-align: center; }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 6px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 20px;
+            padding: 13px;
+            background: #234b78;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover { background: #163653; }
+
+        #message { margin-top: 15px; }
+
+        .submission {
+            padding: 15px;
+            background: #f4f7fb;
+            border-left: 4px solid #234b78;
+            margin-top: 12px;
+            border-radius: 5px;
+            overflow-wrap: anywhere;
+        }
+
+        a { color: #234b78; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Assignment Submission Portal</h1>
+        <p class="subtitle">DevOps Lab Mid - CSC418</p>
+
+        <form id="assignmentForm">
+            <label>Student Name</label>
+            <input type="text" id="name" required>
+
+            <label>Registration Number</label>
+            <input type="text" id="reg_number" required>
+
+            <label>Assignment Title</label>
+            <input type="text" id="title" required>
+
+            <label>Submission URL</label>
+            <input type="url" id="url" required
+                   placeholder="https://github.com/...">
+
+            <button type="submit">Submit Assignment</button>
+        </form>
+
+        <p id="message" role="status"></p>
+
+        <h2>Saved Submissions</h2>
+        <div id="submissionList"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById("assignmentForm");
+        const message = document.getElementById("message");
+        const list = document.getElementById("submissionList");
+
+        async function loadSubmissions() {
+            try {
+                const response = await fetch("/submissions");
+                if (!response.ok) throw new Error("Load failed");
+
+                const submissions = await response.json();
+                list.replaceChildren();
+
+                if (submissions.length === 0) {
+                    list.textContent = "No submissions yet.";
+                    return;
+                }
+
+                submissions.forEach(item => {
+                    const div = document.createElement("div");
+                    div.className = "submission";
+
+                    const heading = document.createElement("strong");
+                    heading.textContent = item.title;
+
+                    const details = document.createElement("p");
+                    details.textContent =
+                        item.name + " | " + item.reg_number;
+
+                    const link = document.createElement("a");
+                    link.href = item.url;
+                    link.textContent = item.url;
+                    link.target = "_blank";
+                    link.rel = "noopener noreferrer";
+
+                    div.append(heading, details, link);
+                    list.appendChild(div);
+                });
+            } catch (error) {
+                list.textContent = "Unable to load submissions.";
+            }
+        }
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const data = {
+                name: document.getElementById("name").value,
+                reg_number: document.getElementById("reg_number").value,
+                title: document.getElementById("title").value,
+                url: document.getElementById("url").value
+            };
+
+            try {
+                const response = await fetch("/submit", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                message.textContent = result.message;
+                message.style.color =
+                    response.ok ? "green" : "red";
+
+                if (response.ok) {
+                    form.reset();
+                    await loadSubmissions();
+                }
+            } catch (error) {
+                message.textContent = "Server connection failed.";
+                message.style.color = "red";
+            }
+        });
+
+        loadSubmissions();
+    </script>
+</body>
+</html>
